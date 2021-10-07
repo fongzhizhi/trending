@@ -11,14 +11,6 @@
 </script>
 
 <style>
-    .err404 {
-        width: 280px;
-        margin: 150px auto;
-        height: 255px;
-        padding: 180px 0 0 420px;
-        background: url(../../static/404_bg.png) no-repeat 0 0
-    }
-
     .err404 h4 {
         font-size: 24px;
         color: #191919;

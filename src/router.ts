@@ -1,11 +1,12 @@
-import VueRouter, { RouteConfig } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 // 1.定义路由组件
 import HelloWorld from './components/HelloWorld.vue'
-import NotFound from './components/HelloWorld.vue'
+import NotFound from './components/404.vue'
+
 // 2.定义路由
-const routes: RouteConfig[] = [
+const routes: RouteRecordRaw[] = [
     {
-        path: '/',
+        path: '/home',
         name: 'home',
         component: HelloWorld,
     },
@@ -14,11 +15,11 @@ const routes: RouteConfig[] = [
         name: 'notfound',
         component: NotFound,
     }
-]
+];
 
 // 3.创建路由实例
-const router = new VueRouter({
-    mode: 'history',
+const router = createRouter({
+    history: createWebHistory(),
     routes,
 });
 

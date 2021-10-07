@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
-import VueRouter from 'vue-router'
 import App from './App.vue'
+import router from './router';
 
-
-createApp(App).mount('#app');
+// 实例
+const app = createApp(App)
+// 注入路由
+app.use(router)
+// 挂载实例
+app.mount('#app');
