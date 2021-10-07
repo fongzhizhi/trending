@@ -1,14 +1,32 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 // 1.定义路由组件
-import HelloWorld from './components/HelloWorld.vue'
+import TestPage from './components/TestPage.vue'
+import One from './components/One.vue'
+import Auto from './components/Auto.vue'
+import Customize from './components/Customize.vue'
 import NotFound from './components/404.vue'
 
 // 2.定义路由
 const routes: RouteRecordRaw[] = [
     {
-        path: '/home',
+        path: '/',
         name: 'home',
-        component: HelloWorld,
+        component: TestPage,
+    },
+    {
+        path: '/one',
+        name: 'one',
+        component: One,
+    },
+    {
+        path: '/auto',
+        name: 'auto',
+        component: Auto,
+    },
+    {
+        path: '/customize',
+        name: 'customize',
+        component: Customize,
     },
     {
         path: '/:pathMatch(.*)*',
