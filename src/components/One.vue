@@ -44,10 +44,16 @@
       <el-button @click="resetForm('formModel')">Reset</el-button>
     </el-form-item>
   </el-form>
+
+  <hr>
+  <div id="chart"></div>
 </template>
 
 <script lang="ts">
+import * as echarts from 'echarts';
 import { ElMessage } from 'element-plus';
+import { get_k_data_json } from '../api'
+import { getPriceIndex } from '../analyze/trending-analyze'
 /**表单模型 */
 interface FormModel {
   /**个股代码 */
@@ -60,10 +66,10 @@ interface FormModel {
   endDate: string;
 };
 const formModel: FormModel = {
-  code: '11111',
-  referCode: '22222',
-  startDate: '2020-11-11',
-  endDate: '2020-11-11',
+  code: 'sh.600000',
+  referCode: 'sh.000300',
+  startDate: '2021-1-1',
+  endDate: '2021-1-10',
 };
 /**表单规则 */
 type FormRule<T> = {
@@ -77,9 +83,9 @@ const formRules: FormRule<FormModel> = {
       trigger: 'blur',
     },
     {
-      min: 5,
-      max: 5,
-      message: 'Length should be 5',
+      min: 9,
+      max: 9,
+      message: 'Length should be 9',
       trigger: 'blur',
     },
   ],
@@ -90,9 +96,9 @@ const formRules: FormRule<FormModel> = {
       trigger: 'blur',
     },
     {
-      min: 5,
-      max: 5,
-      message: 'Length should be 5',
+      min: 9,
+      max: 9,
+      message: 'Length should be 9',
       trigger: 'blur',
     },
   ],
@@ -113,12 +119,21 @@ const formRules: FormRule<FormModel> = {
     },
   ],
 }
+// 初始化表格
+const initChart = () => {
+  const chart = document.getElementById('chart');
+  if(!chart) {
+      return;
+  }
+  return echarts.init(chart);
+};
 
 export default {
   data() {
     return {
       formModel,
       formRules,
+      echart: undefined,
     }
   },
   methods: {
@@ -128,7 +143,13 @@ export default {
       const valid: boolean = await form.validate();
       if(valid) {
         const datas: FormModel = form.model;
-        ElMessage.success(datas.startDate);
+        const res = await get_k_data_json({
+            codes: [datas.code, datas.referCode],
+            start: datas.startDate,
+            end: datas.endDate,
+        });
+        
+        
       } else {
         ElMessage.error('Submit datas Error!')
       };
@@ -138,5 +159,15 @@ export default {
       THIS.$refs[formName].resetFields();
     },
   },
+  mounted() {
+      this.$data.echart = initChart() as any;
+  }
 }
 </script>
+
+<style scoped>
+    #chart {
+        width: 100%;
+        height: 400px;
+    }
+</style>
