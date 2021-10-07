@@ -1,5 +1,3 @@
 <template>
-  TestPage
+  Test Page
 </template>
-<script lang="ts">
-</script>

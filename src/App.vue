@@ -7,7 +7,7 @@
     <el-tab-pane label="多股自动筛选" name="/auto"></el-tab-pane>
     <el-tab-pane label="自定义排序" name="/customize"></el-tab-pane>
   </el-tabs>
-  <!--界面-->
+  <!--组件-->
   <div class="view-box">
     <router-view></router-view>
   </div>
@@ -22,9 +22,10 @@ export default {
   },
   methods: {
     tabClick(tab: any) {
+      const THIS: any = this;
       const path = tab.paneName || '/';
-      console.log(path)
-      this.$router.push({path});
+      console.log(path);
+      THIS.$router.push({path});
     },
   },
 }
