@@ -43,20 +43,24 @@
   <EChart
     id="echart_candle_target"
     ref="ref_candle_target"
+    height="300px"
   ></EChart>
   <EChart
     id="echart_candle_ref"
     ref="ref_candle_ref"
+    height="300px"
   ></EChart>
   <!-- 价格指数合并图 -->
   <EChart
     id="echart_price_meger"
     ref="ref_price_meger"
+    height="600px"
   ></EChart>
   <!-- 价格指数差价图 -->
   <EChart
     id="echart_price_diff"
     ref="ref_price_diff"
+    height="600px"
   ></EChart>
 </template>
 
@@ -64,7 +68,7 @@
 import { ElMessage } from 'element-plus';
 import { get_k_data_json } from '../api'
 import { ref, Ref, reactive } from 'vue'
-import { getCandleStickOption } from '../echarts/utils'
+import { getCandleStickOption, getPriceIndexOptions } from '../echarts/utils'
 import { CandlestickChartConfig } from '../stock/Stock'
 import EChart from './EChart.vue'
 import { dateFormat } from '../utils/utils'
@@ -93,8 +97,8 @@ export default {
     const nowDate = new Date();
     beforeDate.setDate(nowDate.getDate() - 30);
     const formModel: FormModel = reactive({
-      code: 'sh.600000',
-      referCode: 'sh.000300',
+      code: 'sz.000510',
+      referCode: 'sh.000001',
       dateRange: [beforeDate, nowDate],
     });
     /**表单规则 */
@@ -172,21 +176,35 @@ export default {
     */
     function updateView(targetData: CandlestickChartConfig[], refData: CandlestickChartConfig[]) {
       // k线
-      updateCanldeView(ref_candle_target, targetData);
-      updateCanldeView(ref_candle_ref, refData);
-      // 价格指数合并
-
-      // 价格指数差价
+      updateCanldeView(ref_candle_target, targetData, {
+        title: `[${targetData[0].code}]k线图`
+      });
+      updateCanldeView(ref_candle_ref, refData, {
+        title: `[${refData[0].code}]k线图`
+      });
+      // 价格指数合并 + 差价
+      updatePriceMergeView(ref_price_meger, targetData, refData, {
+        title: '价格指数合并图',
+        diff_title: '价格指数差价图',
+        diff_ref: ref_price_diff,
+      });
     }
 
     /**获取echats的k线options */
     function getEchartsCandleOptions(op: {
-      xAxisData: any,
-      seriesData: any,
-      }) {
+      title: string;
+      xAxis_data: string[];
+      series_data: any[];
+    }) {
       return {
+        title: {
+          text: op.title
+        },
         xAxis: {
-          data: op.xAxisData,
+          data: op.xAxis_data,
+        },
+        tooltip: {
+          trigger: 'axis'
         },
         yAxis: {
           type: 'value',
@@ -194,19 +212,129 @@ export default {
         },
         series: [{
           type: 'candlestick',
-          data: op.seriesData,
+          data: op.series_data,
         }],
       }
     }
 
     /**更新k线图 */
-    function updateCanldeView(r: Ref, data: CandlestickChartConfig[]) {
+    function updateCanldeView(r: Ref, data: CandlestickChartConfig[], op: {
+      title: string;
+    }) {
       const d = getCandleStickOption(data);
       const p = getEchartsCandleOptions({
-        xAxisData: d.dates,
-        seriesData: d.data,
+        xAxis_data: d.dates,
+        series_data: d.data,
+        title: op.title,
       });
       r.value.updateOptions(p);
+    }
+
+    /**获取echats价格指数合并图options */
+    function getEchartsPriceMergeOptions(op: {
+      title: string;
+      legend_data: string[];
+      xAxis_data: string[];
+      series: any[];
+    }) {
+      return {
+        title: {
+          text: op.title,
+        },
+        tooltip: {
+          trigger: 'axis'
+        },
+        legend: {
+          data: op.legend_data
+        },
+        xAxis: {
+          data: op.xAxis_data,
+        },
+        yAxis: {
+          type: 'value',
+          scale: true,
+        },
+        series: op.series,
+      };
+    }
+
+    /**获取echats价格指数差价图 */
+    function getEchartsPriceDiffOptions(op: {
+      title: string;
+      xAxis_data: string[];
+      series_data: any[];
+    }) {
+      return {
+        title: {
+          text: op.title,
+        },
+        tooltip: {
+          trigger: 'axis'
+        },
+        xAxis: {
+          data: op.xAxis_data,
+        },
+        yAxis: {
+          type: 'value',
+          scale: true,
+        },
+        series: [
+          {
+            type: 'line',
+            data: op.series_data,
+          }
+        ],
+      };
+    }
+
+    /**更新价格合并图 */
+    function updatePriceMergeView(r: Ref, targetData: CandlestickChartConfig[], refData: CandlestickChartConfig[], op: {
+      title: string;
+      diff_ref?: Ref;
+      diff_title?: string;
+    }) {
+      const target = getPriceIndexOptions(targetData);
+      const _ref = getPriceIndexOptions(refData);
+      const legend_data = [targetData[0].code, refData[0].code];
+      const ops = getEchartsPriceMergeOptions({
+        legend_data,
+        xAxis_data: target.dates,
+        series: [
+          {
+            name: legend_data[0],
+            type: 'line',
+            data: target.data,
+          },
+          {
+            name: legend_data[1],
+            type: 'line',
+            data: _ref.data,
+          }
+        ],
+        title: op.title,
+      });
+      r.value.updateOptions(ops);
+      
+      if(op.diff_ref) {
+        const diff_data = target.data.map((p, i) => {
+          return p - _ref.data[i]
+        });
+        updatePriceDiffView(op.diff_ref, {
+            title: op.diff_title || '',
+            xAxis_data: target.dates,
+            series_data: diff_data,
+        });
+      }
+    }
+
+    /**更新价格差价图 */
+    function updatePriceDiffView(r: Ref, op: {
+      xAxis_data: string[],
+      series_data: any[],
+      title: string;
+    }) {
+      const ops = getEchartsPriceDiffOptions(op);
+      r.value.updateOptions(ops);
     }
 
     return {
