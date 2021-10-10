@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { CandlestickChartConfig } from './stock/Stock'
 
 // 请求地址
 axios.defaults.baseURL = '/api';
@@ -11,12 +12,8 @@ interface KDataParams {
     start: string;
     end: string;
 }
-
-interface KDataRes {
-    [code: string]: {
-        date: string;
-        close: number;
-    }
+export interface KDataRes {
+    [code: string]: CandlestickChartConfig[],
 }
 
 /**获取个股k线 */
