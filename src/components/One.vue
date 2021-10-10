@@ -14,11 +14,11 @@
     </el-form-item>
 
     <el-form-item label="Date Range" prop="dateRange">
-      <el-col :span="11">
+      <el-col :span="10">
         <el-date-picker
             v-model="formModel.dateRange"
             type="daterange"
-            range-separator="To"
+            range-separator="-"
             start-placeholder="Start date"
             end-placeholder="End date"
             style="width: 100%"
@@ -40,16 +40,24 @@
 
   <hr>
   <!-- k线图 -->
-  <CandlestickChart
+  <EChart
     id="echart_candle_target"
     ref="ref_candle_target"
-  ></CandlestickChart>
-  <CandlestickChart
+  ></EChart>
+  <EChart
     id="echart_candle_ref"
     ref="ref_candle_ref"
-  ></CandlestickChart>
+  ></EChart>
   <!-- 价格指数合并图 -->
+  <EChart
+    id="echart_price_meger"
+    ref="ref_price_meger"
+  ></EChart>
   <!-- 价格指数差价图 -->
+  <EChart
+    id="echart_price_diff"
+    ref="ref_price_diff"
+  ></EChart>
 </template>
 
 <script lang="ts">
@@ -58,7 +66,7 @@ import { get_k_data_json } from '../api'
 import { ref, Ref, reactive } from 'vue'
 import { getCandleStickOption } from '../echarts/utils'
 import { CandlestickChartConfig } from '../stock/Stock'
-import CandlestickChart from './CandlestickChart.vue';
+import EChart from './EChart.vue'
 import { dateFormat } from '../utils/utils'
 /**表单模型 */
 interface FormModel {
@@ -76,14 +84,14 @@ type FormRule<T> = {
 
 export default {
   components: {
-    CandlestickChart
+    EChart
   },
   setup() {
     const ref_candle_form = ref();
     /**表单模型 */
     const beforeDate = new Date();
     const nowDate = new Date();
-    beforeDate.setDate(nowDate.getDate() - 10);
+    beforeDate.setDate(nowDate.getDate() - 30);
     const formModel: FormModel = reactive({
       code: 'sh.600000',
       referCode: 'sh.000300',
@@ -128,6 +136,8 @@ export default {
     // echarts相关
     const ref_candle_target = ref();
     const ref_candle_ref = ref();
+    const ref_price_meger = ref();
+    const ref_price_diff = ref();
 
     /**重置表单 */
     const resetForm = () => {
@@ -161,8 +171,12 @@ export default {
      * @param refData 参考股票k线数据
     */
     function updateView(targetData: CandlestickChartConfig[], refData: CandlestickChartConfig[]) {
+      // k线
       updateCanldeView(ref_candle_target, targetData);
       updateCanldeView(ref_candle_ref, refData);
+      // 价格指数合并
+
+      // 价格指数差价
     }
 
     /**获取echats的k线options */
@@ -185,6 +199,7 @@ export default {
       }
     }
 
+    /**更新k线图 */
     function updateCanldeView(r: Ref, data: CandlestickChartConfig[]) {
       const d = getCandleStickOption(data);
       const p = getEchartsCandleOptions({
@@ -200,6 +215,8 @@ export default {
       ref_candle_form,
       ref_candle_target,
       ref_candle_ref,
+      ref_price_meger,
+      ref_price_diff,
       resetForm,
       submitForm,
     } 

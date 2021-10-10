@@ -1,5 +1,5 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
+  <img id="logo" alt="logo" src="./assets/logo.svg" />
   <!--Tabs-->
   <el-tabs type="card" v-model="activeName" @tab-click="tabClick">
     <el-tab-pane label="主页" name="/"></el-tab-pane>
@@ -38,7 +38,10 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+#logo {
+  width: 120px;
+  margin: 20px auto;
 }
 .tabs {
   display: inline-flex;
