@@ -9,7 +9,9 @@
   </el-tabs>
   <!--组件-->
   <div class="view-box">
-    <router-view></router-view>
+    <keep-alive>
+      <router-view></router-view>
+    </keep-alive>
   </div>
 </template>
 
@@ -24,7 +26,6 @@ export default {
     tabClick(tab: any) {
       const THIS: any = this;
       const path = tab.paneName || '/';
-      console.log(path);
       THIS.$router.push({path});
     },
   },

@@ -17,6 +17,9 @@ const routes: RouteRecordRaw[] = [
         path: '/one',
         name: 'one',
         component: One,
+        meta: {
+            keepAlive: true, 
+        }
     },
     {
         path: '/auto',
