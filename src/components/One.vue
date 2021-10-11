@@ -66,7 +66,7 @@
 
 <script lang="ts">
 import { ElMessage } from 'element-plus';
-import { get_k_data_json } from '../api'
+import { get_k_data_json } from '../datas/api'
 import { ref, Ref, reactive } from 'vue'
 import { getCandleStickOption, getPriceIndexOptions } from '../echarts/utils'
 import { CandlestickChartConfig } from '../stock/Stock'

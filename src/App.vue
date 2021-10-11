@@ -55,4 +55,7 @@ export default {
   border: solid 1px #cfdeec;
   background: #e8e4e4;
 }
+.el-tabs--card>.el-tabs__header .el-tabs__item.is-active {
+  background: aliceblue;
+}
 </style>
