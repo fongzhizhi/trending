@@ -11,7 +11,7 @@
     <p>Output</p>
     <pre>
     1.表格信息
-        + 股票代码 股票名称 时间范围 区间最小值 区间最大值 区间股价均值 当前区间范围
+        + 股票代码 股票名称 时间范围 最小值 最大值 均值 当前所处区间
         + 可排序
     2.统计图
         + 区间范围统计图，均分为5份，统计每个区间的股票个数
@@ -59,7 +59,7 @@
 
 <script lang="ts">
 import { ElMessage } from 'element-plus';
-import { get_k_data_json } from '../api'
+import { get_k_data_json } from '../datas/api'
 import { ref, Ref, reactive } from 'vue'
 import { getCandleStickOption, getPriceIndexOptions } from '../echarts/utils'
 import { CandlestickChartConfig } from '../stock/Stock'
