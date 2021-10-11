@@ -3,6 +3,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import TestPage from './components/TestPage.vue'
 import One from './components/One.vue'
 import Auto from './components/Auto.vue'
+import PriceRange from './components/PriceRange.vue'
 import Customize from './components/Customize.vue'
 import NotFound from './components/404.vue'
 
@@ -20,6 +21,11 @@ const routes: RouteRecordRaw[] = [
         meta: {
             keepAlive: true, 
         }
+    },
+    {
+        path: '/price_range',
+        name: 'price_range',
+        component: PriceRange,
     },
     {
         path: '/auto',
