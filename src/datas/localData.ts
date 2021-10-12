@@ -56,7 +56,7 @@ export interface StockMeta {
 
 let all_stockObj: {
     [code: string]: StockSimpleMeta;
-} | null = {};
+} | null = null;
 /**
  * 获取股票集合
  */

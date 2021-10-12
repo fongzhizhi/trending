@@ -48,6 +48,20 @@
       </el-col>
     </el-form-item>
 
+    <el-form-item label="Frequency Type" prop="frequency">
+      <el-col
+        v-for="(item, i) in frequencyOptions"
+        :key="i"
+        :span="10">
+        <el-radio
+          v-model="formModel.frequency"
+          :label="item"
+          border
+        >{{ item }}</el-radio>
+      </el-col>
+      
+    </el-form-item>
+
     <el-form-item>
       <el-button
         type="primary"
@@ -65,7 +79,11 @@
     :data="tableData"
     stripe
     :default-sort="{ prop: 'ratio', order: 'ascending' }"
-    height="400px"
+    v-loading="tableLoading"
+    element-loading-text="Upload from server..."
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="#d7d7d7"
+    height="350px"
     style="width: 100%">
     <el-table-column prop="code" label="Code" />
     <el-table-column prop="code_name" label="Code Name" />
@@ -79,7 +97,7 @@
 
 <script lang="ts">
 import { ElMessage } from 'element-plus';
-import { get_k_data_json, KDataRes } from '../datas/api'
+import { Frequency, get_k_data_json, KDataRes } from '../datas/api'
 import { ref, reactive } from 'vue'
 import EChart from './EChart.vue'
 import { dateFormat } from '../utils/utils'
@@ -96,6 +114,7 @@ interface FormModel {
   ratio_min: number;
   /**最大比例 */
   ratio_max: number;
+  frequency: Frequency;
 };
 /**表单规则 */
 type FormRule<T> = {
@@ -111,13 +130,14 @@ export default {
     /**表单模型 */
     const beforeDate = new Date();
     const nowDate = new Date();
-    beforeDate.setFullYear(nowDate.getFullYear() - 2);
+    beforeDate.setFullYear(nowDate.getFullYear() - 5);
     const formModel: FormModel = reactive({
       code: 'sz.000510',
       referCode: 'sh.000001',
       dateRange: [beforeDate, nowDate],
       ratio_min: 0,
-      ratio_max: 0.5,
+      ratio_max: 0.3,
+      frequency: Frequency.Mouth,
     });
     /**表单规则 */
     const formRules: FormRule<FormModel> = {
@@ -169,12 +189,13 @@ export default {
         }
       ],
     }
+    const frequencyOptions = [Frequency.Day, Frequency.Week, Frequency.Mouth];
 
     /**重置表单 */
     const resetForm = () => {
       ref_form.value.resetFields();
     };
-    const allStockObj = getAll_StockObj(10);
+    const allStockObj = getAll_StockObj();
     /**表单提交 */
     const submitForm = async () => {
       // 消息检测
@@ -184,17 +205,30 @@ export default {
         ElMessage.error('Submit datas Error!');
         return;
       }
+      const timerName = 'query';
+      console.time(timerName);
+      // loading
+      tableLoading.value = true;
       // 发起请求
       const datas: FormModel = form.model;
       const format = 'yyyy-MM-dd';
-      const postDate = {
-          codes: Object.keys(allStockObj),
-          start: dateFormat(format, datas.dateRange[0]),
-          end: dateFormat(format, datas.dateRange[1]),
-      };
-      const res = await get_k_data_json(postDate);
+      // 数据太多了，拆分查询
+      const allCodes = Object.keys(allStockObj);
+      const queryStep = 10;
+      const allRes: KDataRes = {};
+      for(let i = 0; i < allCodes.length; i+= queryStep) {
+        const res = await get_k_data_json({
+            codes: allCodes.slice(i, i + queryStep),
+            start: dateFormat(format, datas.dateRange[0]),
+            end: dateFormat(format, datas.dateRange[1]),
+            frequency: datas.frequency,
+        });
+        Object.assign(allRes, res);
+      }
       // 更新图例
-      updateView(res, datas);
+      updateView(allRes, datas);
+      tableLoading.value = false;
+      console.timeEnd(timerName);
     }
 
     interface TableItem {
@@ -207,14 +241,14 @@ export default {
     };
     /**表格数据 */
     const tableData = reactive<TableItem[]>([]);
+    const tableLoading = ref(false);
 
     /**
      * 更新图例
     */
     function updateView(res: KDataRes, form: FormModel) {
+       // 表格详情
        updateTableView(res, form);
-       // 表格信息 股票代码 股票名称 时间范围 最小值 最大值 均值 当前所处区间
-        
        // 区间范围统计图，均分为5份，统计每个区间的股票个数
     }
 
@@ -224,7 +258,6 @@ export default {
 
     /**更新表格 */
     function updateTableView(res: KDataRes, form: FormModel) {
-      let index = 1;
       for(let code in res) {
         const item = res[code];
         if(item.length == 0) {
@@ -241,7 +274,7 @@ export default {
         const last = item[item.length - 1];
         const ratio = (max - min === 0) ? 0 : (last.close - min) / (max - min);
         // 区间范围过滤
-        if(!(ratio >= form.ratio_min || ratio <= form.ratio_max)) {
+        if(!(ratio >= form.ratio_min && ratio <= form.ratio_max)) {
           continue;
         }
         tableData.push({
@@ -259,9 +292,11 @@ export default {
       formModel,
       formRules,
       ref_form,
+      tableData,
+      tableLoading,
+      frequencyOptions,
       resetForm,
       submitForm,
-      tableData,
     } 
   }
 }

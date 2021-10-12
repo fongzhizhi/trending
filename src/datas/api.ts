@@ -6,12 +6,22 @@ import { StockMeta, StockSimpleMeta } from './localData';
 axios.defaults.baseURL = '/api';
 axios.defaults.withCredentials = true;
 
+export enum Frequency {
+    Day = 'd',
+    Week = 'w',
+    Mouth = 'm',
+    Min_5 = '5min',
+    Min_15 = '15min',
+    Min_30 = '30min',
+    Min_60 = '60min',
+}
 
 interface KDataParams {
     code?: string;
     codes?: string[];
     start: string;
     end: string;
+    frequency?: Frequency;
 }
 export interface KDataRes {
     [code: string]: CandlestickChartConfig[],

@@ -3,7 +3,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import TestPage from './components/TestPage.vue'
 import One from './components/One.vue'
 import Auto from './components/Auto.vue'
-import PriceRange from './components/PriceRange.vue'
+import HistoricalPercent from './components/HistoricalPercent.vue'
 import Customize from './components/Customize.vue'
 import NotFound from './components/404.vue'
 
@@ -23,9 +23,9 @@ const routes: RouteRecordRaw[] = [
         }
     },
     {
-        path: '/price_range',
-        name: 'price_range',
-        component: PriceRange,
+        path: '/historical_percent',
+        name: 'historical_percent',
+        component: HistoricalPercent,
     },
     {
         path: '/auto',
