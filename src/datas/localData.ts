@@ -1,4 +1,4 @@
-import all_stock from './all_stock.json'
+import all_stock from './all_stock_meta.json'
 
 export enum StockTradeStatus {
     /**上市 */
@@ -42,49 +42,11 @@ export interface StockMeta {
     outDate: string;
 };
 
-/**
- * 遍历所有股票合集
- * @param call 处理函数
- */
- export function iterateAllStock(call: (item: StockSimpleMeta) => boolean) {
-    for(let item of all_stock) {
-        if(!call.call(null, item as StockSimpleMeta)) {
-            return;
-        }
-    }
-}
-
-let all_stockObj: {
-    [code: string]: StockSimpleMeta;
-} | null = null;
-/**
- * 获取股票集合
- */
-export function getAll_StockObj(max: number = Infinity, filterOut = true) {
-    if(all_stockObj && (max === Infinity || Object.keys(all_stockObj).length === max)) {
-        return all_stockObj;
-    }
-    all_stockObj = {};
-    let i = 0;
-    iterateAllStock((item) => {
-        if(filterOut && item.tradeStatus === StockTradeStatus.OUT) {
-            return true;
-        }
-        all_stockObj && (all_stockObj[item.code] = item);
-        return ++i < max;
-    });
-    return all_stockObj;
-}
-
-/**
- * 获取所有上市股
- * @param max 获取的最大股票数量
- */
-export function getAllIpoStockCodes(max: number = Infinity) {
-    const list: string[]  = [];
-    iterateAllStock((item) => {
-        item.tradeStatus == StockTradeStatus.IPO && list.push(item.code);
-        return list.length < max;
-    });
-    return list;
+let all_stock_obj = {
+    [code: string]: StockMeta
+};
+export function getAll_StockObj(): {
+    [code: string]: StockMeta
+} {
+    all_stock ;
 }
