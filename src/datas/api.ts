@@ -35,7 +35,7 @@ export function get_k_data_json(params: KDataParams) {
         axios.post('/get_k_data_json', Object.assign({}, params)).then((res: any) => {
             const data: KDataRes = {};
             for(let code in res.data) {
-                data[code] = JSON.parse(res.data[code]);
+                data[code] = res.data[code];
             }
             resolve(data);
         }, err => {

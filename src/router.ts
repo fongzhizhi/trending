@@ -26,6 +26,9 @@ const routes: RouteRecordRaw[] = [
         path: '/historical_percent',
         name: 'historical_percent',
         component: HistoricalPercent,
+        meta: {
+            keepAlive: true, 
+        }
     },
     {
         path: '/auto',

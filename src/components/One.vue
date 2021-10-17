@@ -9,8 +9,16 @@
       <el-input v-model="formModel.code"></el-input>
     </el-form-item>
 
+    <el-form-item label="Stock Name" prop="stock_name">
+      <el-input disabled  v-model="stock_name"></el-input>
+    </el-form-item>
+
     <el-form-item label="Refer Code" prop="referCode">
       <el-input v-model="formModel.referCode"></el-input>
+    </el-form-item>
+
+    <el-form-item label="Refer Name" prop="refer_name">
+      <el-input disabled  v-model="refer_name"></el-input>
     </el-form-item>
 
     <el-form-item label="Date Range" prop="dateRange">
@@ -37,41 +45,44 @@
     >Reset</el-button>
     </el-form-item>
   </el-form>
-
   <hr>
-  <!-- k线图 -->
-  <EChart
-    id="echart_candle_target"
-    ref="ref_candle_target"
-    height="300px"
-  ></EChart>
-  <EChart
-    id="echart_candle_ref"
-    ref="ref_candle_ref"
-    height="300px"
-  ></EChart>
-  <!-- 价格指数合并图 -->
-  <EChart
-    id="echart_price_meger"
-    ref="ref_price_meger"
-    height="600px"
-  ></EChart>
-  <!-- 价格指数差价图 -->
-  <EChart
-    id="echart_price_diff"
-    ref="ref_price_diff"
-    height="600px"
-  ></EChart>
+  <div>
+    <!-- k线图 -->
+    <EChart
+      id="echart_candle_target"
+      ref="ref_candle_target"
+      height="300px"
+    ></EChart>
+    <EChart
+      id="echart_candle_ref"
+      ref="ref_candle_ref"
+      height="300px"
+    ></EChart>
+    <!-- 价格指数合并图 -->
+    <EChart
+      id="echart_price_meger"
+      ref="ref_price_meger"
+      height="600px"
+    ></EChart>
+    <!-- 价格指数差价图 -->
+    <EChart
+      id="echart_price_diff"
+      ref="ref_price_diff"
+      height="600px"
+    ></EChart>
+  </div>
 </template>
 
 <script lang="ts">
-import { ElMessage } from 'element-plus';
+import { ElLoading, ElMessage } from 'element-plus';
 import { get_k_data_json } from '../datas/api'
-import { ref, Ref, reactive } from 'vue'
+import { ref, Ref, reactive, onActivated, computed } from 'vue'
 import { getCandleStickOption, getPriceIndexOptions } from '../echarts/utils'
 import { CandlestickChartConfig } from '../stock/Stock'
 import EChart from './EChart.vue'
 import { dateFormat } from '../utils/utils'
+import { useRouter } from 'vue-router';
+import { getStockMeta } from '../datas/localData';
 /**表单模型 */
 interface FormModel {
   /**个股代码 */
@@ -91,15 +102,16 @@ export default {
     EChart
   },
   setup() {
+    const router = useRouter();
     const ref_candle_form = ref();
     /**表单模型 */
-    const beforeDate = new Date();
-    const nowDate = new Date();
-    beforeDate.setDate(nowDate.getDate() - 30);
+    const startDate = new Date();
+    const endDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
     const formModel: FormModel = reactive({
       code: 'sz.000510',
       referCode: 'sh.000001',
-      dateRange: [beforeDate, nowDate],
+      dateRange: [startDate, endDate],
     });
     /**表单规则 */
     const formRules: FormRule<FormModel> = {
@@ -137,6 +149,12 @@ export default {
         }
       ],
     }
+    const stock_name = computed(() => {
+      return getStockMeta(formModel.code).code_name;
+    });
+    const refer_name = computed(() => {
+      return getStockMeta(formModel.referCode).code_name;
+    });
     // echarts相关
     const ref_candle_target = ref();
     const ref_candle_ref = ref();
@@ -156,6 +174,10 @@ export default {
         ElMessage.error('Submit datas Error!');
         return;
       }
+      // loading
+      const loading = ElLoading.service({
+        text: 'loading...'
+      });
       // 发起请求
       const datas: FormModel = form.model;
       const format = 'yyyy-MM-dd';
@@ -164,9 +186,14 @@ export default {
           start: dateFormat(format, datas.dateRange[0]),
           end: dateFormat(format, datas.dateRange[1]),
       };
-      const res = await get_k_data_json(postDate);
-      // 更新图例
-      updateView(res[datas.code], res[datas.referCode]);
+      try {
+        const res = await get_k_data_json(postDate);
+        // 更新图例
+        updateView(res[datas.code], res[datas.referCode]);
+      } catch (err) {
+        loading.close();
+      }
+      loading.close();
     }
 
     /**
@@ -337,10 +364,27 @@ export default {
       r.value.updateOptions(ops);
     }
 
+    onActivated(() => {
+      const params = router.currentRoute.value.params;
+      const code = params.code as string;
+      const refer_code = params.refer_code as string;
+      const start = params.start as string;
+      const end = params.end as string;
+      const formModelStr = [formModel.code, formModel.referCode].toString();
+      code && (formModel.code = code);
+      refer_code && (formModel.referCode = refer_code);
+      start && end && (formModel.dateRange = [new Date(start), new Date(end)]);
+      if(formModelStr !== [formModel.code, formModel.referCode].toString()) {
+        submitForm();
+      }
+    });
+
     return {
       formModel,
       formRules,
       ref_candle_form,
+      stock_name,
+      refer_name,
       ref_candle_target,
       ref_candle_ref,
       ref_price_meger,

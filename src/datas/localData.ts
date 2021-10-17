@@ -1,5 +1,10 @@
 import all_stock from './all_stock_meta.json'
 
+
+const all_stock_loacl: {
+    [code: string]: StockMeta
+} = all_stock as any;
+
 export enum StockTradeStatus {
     /**上市 */
     IPO = '1',
@@ -9,11 +14,11 @@ export enum StockTradeStatus {
 
 export enum StockType {
     /**股票 */
-    STOCK = '1',
+    STOCK = 1,
     /**指数 */
-    INDEX = '2',
+    INDEX = 2,
     /**其他 */
-    OTHER = '3',
+    OTHER = 3,
 }
 
 /**股票元数据简单版 */
@@ -42,11 +47,28 @@ export interface StockMeta {
     outDate: string;
 };
 
-let all_stock_obj = {
-    [code: string]: StockMeta
-};
+export function toUsualStockType(type: StockType) {
+    switch(type) {
+        case StockType.INDEX:
+            return '指数';
+        case StockType.STOCK:
+            return '股票';
+        default:
+            return '其他';
+    }
+}
+
+
+
 export function getAll_StockObj(): {
     [code: string]: StockMeta
 } {
-    all_stock ;
+    return all_stock_loacl;
+}
+
+/**
+ * 获取股票元信息
+ */
+export function getStockMeta(code: string) {
+    return all_stock_loacl[code];
 }
