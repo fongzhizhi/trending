@@ -60,10 +60,18 @@ export function toUsualStockType(type: StockType) {
 
 
 
-export function getAll_StockObj(): {
+export function getAll_StockObj(start?: number, end?: number): {
     [code: string]: StockMeta
 } {
-    return all_stock_loacl;
+    if(!start && !end) {
+        return all_stock_loacl;
+    }
+    const codes = Object.keys(all_stock_loacl).slice(start, end);
+    const obj: {[code: string]: StockMeta} = {};
+    codes.forEach(code => {
+        obj[code] = all_stock_loacl[code];
+    });
+    return obj;
 }
 
 /**

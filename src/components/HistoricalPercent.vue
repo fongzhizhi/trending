@@ -29,7 +29,15 @@
           border
         >{{ item }}</el-radio>
       </el-col>
-      
+    </el-form-item>
+
+    <el-form-item label="Search Range" prop="range">
+      <el-col :span="10">
+        <el-input-number v-model="formModel.stratIndex" :step="100" />
+      </el-col>
+      <el-col :span="10">
+        <el-input-number v-model="formModel.endIndex" :step="100" />
+      </el-col>
     </el-form-item>
 
     <el-form-item>
@@ -87,7 +95,7 @@ import { Frequency, get_k_data_json, KDataRes } from '../datas/api'
 import { ref, reactive, nextTick } from 'vue'
 import EChart from './EChart.vue'
 import { dateFormat } from '../utils/utils'
-import { getAll_StockObj, StockType, toUsualStockType } from '../datas/localData';
+import { getAll_StockObj, StockMeta, StockType, toUsualStockType } from '../datas/localData';
 import { useRouter } from 'vue-router';
 /**表单模型 */
 interface FormModel {
@@ -95,6 +103,10 @@ interface FormModel {
   dateRange: Date[];
   /**k线类型 */
   frequency: Frequency;
+  /**查询起点 */
+  stratIndex: number,
+  /**查询终点 */
+  endIndex: number,
 };
 /**表单规则 */
 type FormRule<T> = {
@@ -112,10 +124,12 @@ export default {
     /**表单模型 */
     const beforeDate = new Date();
     const nowDate = new Date();
-    beforeDate.setFullYear(nowDate.getFullYear() - 3);
+    beforeDate.setFullYear(nowDate.getFullYear() - 5);
     const formModel: FormModel = reactive({
       dateRange: [beforeDate, nowDate],
       frequency: Frequency.Mouth,
+      stratIndex: 0,
+      endIndex: 100,
     });
     /**表单规则 */
     const formRules: FormRule<FormModel> = {
@@ -128,12 +142,14 @@ export default {
       ]
     }
     const frequencyOptions = [Frequency.Day, Frequency.Week, Frequency.Mouth];
+    let allStockObj: {
+        [code: string]: StockMeta;
+    } = {};
 
     /**重置表单 */
     const resetForm = () => {
       ref_form.value.resetFields();
     };
-    const allStockObj = getAll_StockObj();
     /**表单提交 */
     const submitForm = async () => {
       // 消息检测
@@ -153,8 +169,9 @@ export default {
       const datas: FormModel = form.model;
       const format = 'yyyy-MM-dd';
       // 数据太多了，批次查询
+      allStockObj = getAll_StockObj(datas.stratIndex, datas.endIndex);
       const allCodes = Object.keys(allStockObj);
-      const queryStep = 10;
+      const queryStep = 5;
       const allRes: KDataRes = {};
       const total = allCodes.length;
       for(let i = 0; i < total; i+= queryStep) {

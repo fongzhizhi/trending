@@ -60,7 +60,11 @@ export default {
         onMounted(() => {
             updateOptions();
             window.addEventListener('resize', () => {
-                $chart?.resize();
+                const el = document.getElementById(props.id);
+                if(!$chart || !el || (el &&  el.style.display === 'none')) {
+                    return;
+                }
+                $chart.resize();
             });
         });
 
