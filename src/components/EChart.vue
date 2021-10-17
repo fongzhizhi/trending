@@ -59,7 +59,11 @@ export default {
         };
         onMounted(() => {
             updateOptions();
+            window.addEventListener('resize', () => {
+                $chart?.resize();
+            });
         });
+
         return {
             updateOptions,
             show,

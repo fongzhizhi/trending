@@ -55,8 +55,8 @@
     :data="tableData"
     @row-dblclick="tableDBClick"
     :lazy="true"
-    stripe
     :default-sort="{ prop: 'ratio', order: 'ascending' }"
+    stripe
     height="350px"
     style="width: 100%">
     <el-table-column prop="code" label="Code" />
@@ -112,7 +112,7 @@ export default {
     /**表单模型 */
     const beforeDate = new Date();
     const nowDate = new Date();
-    beforeDate.setFullYear(nowDate.getFullYear() - 5);
+    beforeDate.setFullYear(nowDate.getFullYear() - 3);
     const formModel: FormModel = reactive({
       dateRange: [beforeDate, nowDate],
       frequency: Frequency.Mouth,
@@ -186,11 +186,11 @@ export default {
     };
     /**表格数据 */
     const tableData = reactive<TableItem[]>([]);
-    const typeFilters = [
+    const typeFilters = reactive([
       {text: toUsualStockType(StockType.INDEX), value: toUsualStockType(StockType.INDEX)},
       {text: toUsualStockType(StockType.STOCK), value: toUsualStockType(StockType.STOCK)},
       {text: toUsualStockType(StockType.OTHER), value: toUsualStockType(StockType.OTHER)},
-    ];
+    ]);
     const typeFilterHandle = (value: string, row: TableItem) => {
       return row.stock_type === value;
     };
@@ -251,6 +251,10 @@ export default {
           value: 0,
         };  
       });
+      const stockTypeMap: {[k: string]: number} = {};
+      typeFilters.forEach(item => {
+        stockTypeMap[item.text] = 0;
+      });
       for(let code in res) {
         const item = res[code];
         if(item.length == 0) {
@@ -267,24 +271,29 @@ export default {
         const last = item[item.length - 1];
         const ratio = (max - min === 0) ? 0 : (last.close - min) / (max - min);
         const stock = allStockObj[last.code];
+        const stock_type = toUsualStockType(stock.type);
         const row = {
           code: last.code,
           stock_name: stock.code_name,
-          stock_type: toUsualStockType(stock.type),
+          stock_type,
           min: fixNum(min),
           max: fixNum(max),
           ave: fixNum(ave),
           ratio: fixNum(ratio),
         };
+        stockTypeMap[stock_type]++;
         for(let item of ratioFilters) {
           if(ratioFilterHandle(item.value, row)) {
             ratioMap[item.value].value ++;
             break;
           }
-        }
-       
+        } 
         tableData.push(row);
       }
+
+      typeFilters.forEach(item => {
+        item.text = `${item.text}[${stockTypeMap[item.text]}]`
+      });
     }
 
     function updatePieView(data: any[]) {
