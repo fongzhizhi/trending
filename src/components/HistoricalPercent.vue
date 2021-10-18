@@ -125,7 +125,7 @@ export default {
     const beforeDate = new Date();
     const nowDate = new Date();
     beforeDate.setFullYear(nowDate.getFullYear() - 5);
-    const stratIndex = 600;
+    const stratIndex = 200;
     const formModel: FormModel = reactive({
       dateRange: [beforeDate, nowDate],
       frequency: Frequency.Mouth,
