@@ -1,10 +1,9 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 // 1.定义路由组件
 import TestPage from './components/TestPage.vue'
-import One from './components/One.vue'
-import Auto from './components/Auto.vue'
+import PriceIndex from './components/PriceIndex.vue'
+import PriceIndexSearch from './components/PriceIndexSearch.vue'
 import HistoricalPercent from './components/HistoricalPercent.vue'
-import Customize from './components/Customize.vue'
 import NotFound from './components/404.vue'
 
 // 2.定义路由
@@ -15,12 +14,17 @@ const routes: RouteRecordRaw[] = [
         component: TestPage,
     },
     {
-        path: '/one',
-        name: 'one',
-        component: One,
+        path: '/price_index',
+        name: 'price_index',
+        component: PriceIndex,
         meta: {
             keepAlive: true, 
         }
+    },
+    {
+        path: '/price_index_search',
+        name: 'price_index_search',
+        component: PriceIndexSearch,
     },
     {
         path: '/historical_percent',
@@ -29,16 +33,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
             keepAlive: true, 
         }
-    },
-    {
-        path: '/auto',
-        name: 'auto',
-        component: Auto,
-    },
-    {
-        path: '/customize',
-        name: 'customize',
-        component: Customize,
     },
     {
         path: '/:pathMatch(.*)*',

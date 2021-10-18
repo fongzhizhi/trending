@@ -3,10 +3,9 @@
   <!--Tabs-->
   <el-tabs type="card" v-model="activeName" @tab-click="tabClick">
     <el-tab-pane label="主页" name="/"></el-tab-pane>
-    <el-tab-pane label="个股价格指数分析" name="/one"></el-tab-pane>
+    <el-tab-pane label="个股价格指数分析" name="/price_index"></el-tab-pane>
+    <el-tab-pane label="多股价格指数筛选" name="/price_index_search"></el-tab-pane>
     <el-tab-pane label="股价历史百分位" name="/historical_percent"></el-tab-pane>
-    <el-tab-pane label="多股自动筛选" name="/auto"></el-tab-pane>
-    <el-tab-pane label="自定义排序" name="/customize"></el-tab-pane>
   </el-tabs>
   <!--组件-->
   <div class="view-box">

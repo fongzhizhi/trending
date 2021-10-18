@@ -107,9 +107,9 @@ export default {
     /**表单模型 */
     const startDate = new Date();
     const endDate = new Date();
-    startDate.setDate(endDate.getDate() - 30);
+    startDate.setFullYear(endDate.getFullYear() - 3);
     const formModel: FormModel = reactive({
-      code: 'sz.000510',
+      code: 'sh.600036',
       referCode: 'sh.000001',
       dateRange: [startDate, endDate],
     });
