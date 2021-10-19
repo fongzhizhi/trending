@@ -6,16 +6,24 @@ import PriceIndexSearch from './components/PriceIndexSearch.vue'
 import HistoricalPercent from './components/HistoricalPercent.vue'
 import NotFound from './components/404.vue'
 
+export enum RouterName {
+    Home = 'home',
+    PriceIndex = 'price_index',
+    PriceIndexSearch = 'price_index_search',
+    HistoricalPercent = 'historical_percent',
+    NotFound = 'notfound',
+}
+
 // 2.定义路由
 const routes: RouteRecordRaw[] = [
     {
         path: '/',
-        name: 'home',
+        name: RouterName.Home,
         component: TestPage,
     },
     {
         path: '/price_index',
-        name: 'price_index',
+        name: RouterName.PriceIndex,
         component: PriceIndex,
         meta: {
             keepAlive: true, 
@@ -23,12 +31,12 @@ const routes: RouteRecordRaw[] = [
     },
     {
         path: '/price_index_search',
-        name: 'price_index_search',
+        name: RouterName.PriceIndexSearch,
         component: PriceIndexSearch,
     },
     {
         path: '/historical_percent',
-        name: 'historical_percent',
+        name: RouterName.HistoricalPercent,
         component: HistoricalPercent,
         meta: {
             keepAlive: true, 
@@ -36,7 +44,7 @@ const routes: RouteRecordRaw[] = [
     },
     {
         path: '/:pathMatch(.*)*',
-        name: 'notfound',
+        name: RouterName.NotFound,
         component: NotFound,
     }
 ];

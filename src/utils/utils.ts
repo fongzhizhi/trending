@@ -18,3 +18,10 @@ export function dateFormat(fmt: string, date: Date) {
     };
     return fmt;
 }
+
+/**
+ * 获取股票对应的参数指数代码
+ */
+export function getReferCode(code: string) {
+    return code.startsWith('sh.') ? 'sh.000001' : 'sz.399106'
+}

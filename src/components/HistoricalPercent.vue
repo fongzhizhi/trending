@@ -94,9 +94,10 @@ import { ElMessage, ElLoading } from 'element-plus';
 import { Frequency, get_k_data_json, KDataRes } from '../datas/api'
 import { ref, reactive, nextTick } from 'vue'
 import EChart from './EChart.vue'
-import { dateFormat } from '../utils/utils'
+import { dateFormat, getReferCode } from '../utils/utils'
 import { getAll_StockObj, StockMeta, StockType, toUsualStockType } from '../datas/localData';
 import { useRouter } from 'vue-router';
+import { RouterName } from '../router';
 /**表单模型 */
 interface FormModel {
   /**日期范围 */
@@ -165,21 +166,23 @@ export default {
         text: 'uploading in 0% ...',
       });
       // 发起请求
-      const datas: FormModel = form.model;
+      const model: FormModel = form.model;
       const format = 'yyyy-MM-dd';
       // 数据太多了，批次查询
-      allStockObj = getAll_StockObj(datas.stratIndex, datas.endIndex);
+      allStockObj = getAll_StockObj(model.stratIndex, model.endIndex);
       const allCodes = Object.keys(allStockObj);
       const queryStep = 5;
       const allRes: KDataRes = {};
       const total = allCodes.length;
+      const start = dateFormat(format, model.dateRange[0]);
+      const end = dateFormat(format, model.dateRange[1]);
       for(let i = 0; i < total; i+= queryStep) {
         loading.setText(`uploading in ${(i / total * 100).toFixed(2)}% ...`);
         const res = await get_k_data_json({
             codes: allCodes.slice(i, i + queryStep),
-            start: dateFormat(format, datas.dateRange[0]),
-            end: dateFormat(format, datas.dateRange[1]),
-            frequency: datas.frequency,
+            start,
+            end,
+            frequency: model.frequency,
         });
         await nextTick();
         Object.assign(allRes, res);
@@ -229,14 +232,13 @@ export default {
     };
 
     function tableDBClick(row: TableItem) {
-      
       const model: FormModel = ref_form.value.model;
       const format = 'yyyy-MM-dd';
       router.push({
-        name: 'one',
+        name: RouterName.PriceIndex,
         params: {
           code: row.code,
-          refer_code: row.code.startsWith('sh.') ? 'sh.000001' : 'sz.399106',
+          refer_code: getReferCode(row.code),
           start: dateFormat(format, model.dateRange[0]),
           end: dateFormat(format, model.dateRange[1])
         },

@@ -69,10 +69,11 @@
     import { Frequency, get_k_data_json, KDataRes } from '../datas/api'
     import { ref, reactive, nextTick } from 'vue'
     import EChart from './EChart.vue'
-    import { dateFormat } from '../utils/utils'
+    import { dateFormat, getReferCode } from '../utils/utils'
     import { getAll_StockObj, StockMeta, StockType, toUsualStockType } from '../datas/localData';
     import { useRouter } from 'vue-router';
 import { getPriceIndexOptions } from '../echarts/utils';
+import { RouterName } from '../router';
     /**表单模型 */
     interface FormModel {
         /**日期范围 */
@@ -151,19 +152,28 @@ import { getPriceIndexOptions } from '../echarts/utils';
                 const queryStep = 5;
                 const allRes: KDataRes = {};
                 const total = allCodes.length;
+                const start = dateFormat(format, model.dateRange[0]);
+                const end = dateFormat(format, model.dateRange[1]);
                 for(let i = 0; i < total; i+= queryStep) {
                     loading.setText(`uploading in ${(i / total * 100).toFixed(2)}% ...`);
                     const res = await get_k_data_json({
                         codes: allCodes.slice(i, i + queryStep),
-                        start: dateFormat(format, model.dateRange[0]),
-                        end: dateFormat(format, model.dateRange[1]),
+                        start,
+                        end,
                         frequency: Frequency.Day,
                     });
                     await nextTick();
                     Object.assign(allRes, res);
                 }
+                // 参考指数
+                const referDatas = await get_k_data_json({
+                    codes: [getReferCode('sh.'), getReferCode('sz.')],
+                    start,
+                    end,
+                    frequency: Frequency.Day,
+                });
                 // 更新图例
-                updateView(allRes);
+                updateView(allRes, referDatas);
                 loading.setText(`uploading in 100% ...`)
                 loading.close();
             }
@@ -183,12 +193,12 @@ import { getPriceIndexOptions } from '../echarts/utils';
                 const model: FormModel = ref_form.value.model;
                 const format = 'yyyy-MM-dd';
                 router.push({
-                    name: 'one',
+                    name: RouterName.PriceIndex,
                     params: {
-                    code: row.code,
-                    refer_code: row.code.startsWith('sh.') ? 'sh.000001' : 'sz.399106',
-                    start: dateFormat(format, model.dateRange[0]),
-                    end: dateFormat(format, model.dateRange[1])
+                        code: row.code,
+                        refer_code: getReferCode(row.code),
+                        start: dateFormat(format, model.dateRange[0]),
+                        end: dateFormat(format, model.dateRange[1])
                     },
                 });
             }
@@ -196,9 +206,9 @@ import { getPriceIndexOptions } from '../echarts/utils';
             /**
             * 更新图例
             */
-            function updateView(res: KDataRes) {
+            function updateView(res: KDataRes, referDatas: KDataRes) {
                 // 表格详情
-                updateTableView(res);
+                updateTableView(res, referDatas);
             }
 
             function fixNum(n: number, p = 2) {
@@ -206,24 +216,25 @@ import { getPriceIndexOptions } from '../echarts/utils';
             }
 
             /**更新表格 */
-            function updateTableView(res: KDataRes) {
+            function updateTableView(res: KDataRes, referDatas: KDataRes) {
                 const stockTypeMap: {[k: string]: number} = {};
                 for(let code in res) {
                     const item = res[code];
                     if(item.length == 0) {
                         continue;
                     }
+                    const last = item[item.length - 1];
 
+                    const referData = referDatas[getReferCode(last.code)];
                     let min = Infinity, max = -Infinity, ave = 0;
-                    const priceDiff = getPriceIndexOptions(item, (c) => {
-                        const diff_price = c.close - refer_close;
+                    const priceDiff = getPriceIndexOptions(item, (c, index) => {
+                        const diff_price = c.close - referData[index].close;
                         min = Math.min(min, diff_price);
                         max = Math.max(max, diff_price);
                         ave += diff_price;
                     }).data;
                     ave /= priceDiff.length;
 
-                    const last = item[item.length - 1];
                     const stock = allStockObj[last.code];
                     const stock_type = toUsualStockType(stock.type);
                     const row: TableItem = {
