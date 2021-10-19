@@ -70,10 +70,10 @@
     import { ref, reactive, nextTick } from 'vue'
     import EChart from './EChart.vue'
     import { dateFormat, getReferCode } from '../utils/utils'
-    import { getAll_StockObj, StockMeta, StockType, toUsualStockType } from '../datas/localData';
+    import { getAll_StockObj, StockMeta, StockType } from '../datas/localData';
     import { useRouter } from 'vue-router';
-import { getPriceIndexOptions } from '../echarts/utils';
-import { RouterName } from '../router';
+    import { RouterName } from '../router';
+    import { getPriceIndexesByConfig } from '../analyze/trending-analyze';
     /**表单模型 */
     interface FormModel {
         /**日期范围 */
@@ -107,7 +107,7 @@ import { RouterName } from '../router';
             const stratIndex = 200;
             const formModel: FormModel = reactive({
                 dateRange: [beforeDate, nowDate],
-                diffMin: -20,
+                diffMin: -30,
                 diffMax: 10000,
                 stratIndex,
                 endIndex: stratIndex + 100,
@@ -173,7 +173,7 @@ import { RouterName } from '../router';
                     frequency: Frequency.Day,
                 });
                 // 更新图例
-                updateView(allRes, referDatas);
+                updateView(allRes, referDatas, model);
                 loading.setText(`uploading in 100% ...`)
                 loading.close();
             }
@@ -181,7 +181,6 @@ import { RouterName } from '../router';
             interface TableItem {
                 code: string;
                 stock_name: string;
-                stock_type: string;
                 min: number;
                 max: number;
                 ave: number;
@@ -206,9 +205,9 @@ import { RouterName } from '../router';
             /**
             * 更新图例
             */
-            function updateView(res: KDataRes, referDatas: KDataRes) {
+            function updateView(res: KDataRes, referDatas: KDataRes, model: FormModel) {
                 // 表格详情
-                updateTableView(res, referDatas);
+                updateTableView(res, referDatas, model);
             }
 
             function fixNum(n: number, p = 2) {
@@ -216,8 +215,8 @@ import { RouterName } from '../router';
             }
 
             /**更新表格 */
-            function updateTableView(res: KDataRes, referDatas: KDataRes) {
-                const stockTypeMap: {[k: string]: number} = {};
+            function updateTableView(res: KDataRes, referDatas: KDataRes, model: FormModel) {
+                const referPriceIndexesMap: {[code: string]: number[]} = {};
                 for(let code in res) {
                     const item = res[code];
                     if(item.length == 0) {
@@ -225,27 +224,35 @@ import { RouterName } from '../router';
                     }
                     const last = item[item.length - 1];
 
-                    const referData = referDatas[getReferCode(last.code)];
                     let min = Infinity, max = -Infinity, ave = 0;
-                    const priceDiff = getPriceIndexOptions(item, (c, index) => {
-                        const diff_price = c.close - referData[index].close;
+                    const stockPriceIndexes = getPriceIndexesByConfig(item);
+                    let referPriceIndexes = referPriceIndexesMap[last.code];
+                    if(!referPriceIndexes) {
+                        const referData = referDatas[getReferCode(last.code)];
+                        referPriceIndexes = getPriceIndexesByConfig(referData);
+                        referPriceIndexesMap[last.code] = referPriceIndexes;
+                    }
+                    stockPriceIndexes.forEach((p, index) => {
+                        const diff_price = p - referPriceIndexes[index];
                         min = Math.min(min, diff_price);
                         max = Math.max(max, diff_price);
                         ave += diff_price;
-                    }).data;
-                    ave /= priceDiff.length;
+                    });
+                    ave /= item.length;
+
+                    // 过滤
+                    if(min < model.diffMin || max > model.diffMax) {
+                        continue;
+                    }
 
                     const stock = allStockObj[last.code];
-                    const stock_type = toUsualStockType(stock.type);
                     const row: TableItem = {
                         code: last.code,
                         stock_name: stock.code_name,
-                        stock_type,
                         min: fixNum(min),
                         max: fixNum(max),
                         ave: fixNum(ave),
                     };
-                    stockTypeMap[stock_type]++;
                     tableData.push(row);
                 }
             }

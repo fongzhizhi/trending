@@ -1,4 +1,4 @@
-import { getPriceIndexs } from "../analyze/trending-analyze";
+import { getPriceIndexes } from "../analyze/trending-analyze";
 import { CandlestickChart, CandlestickChartConfig } from "../stock/Stock";
 
 /**获取k线数据 */
@@ -34,6 +34,6 @@ export function getPriceIndexOptions(configs: CandlestickChartConfig[], fn?: (c:
         /**日期列表 */
         dates,
         /**价格指数列表 */
-        data: getPriceIndexs(prices),
+        data: getPriceIndexes(prices),
     }
 }
