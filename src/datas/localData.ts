@@ -60,7 +60,7 @@ export function toUsualStockType(type: StockType) {
 
 
 
-export function getAll_StockObj(start?: number, end?: number): {
+export function getAll_StockObj(start?: number, end?: number, filter?: (c: StockMeta) => boolean): {
     [code: string]: StockMeta
 } {
     if(!start && !end) {
@@ -69,7 +69,11 @@ export function getAll_StockObj(start?: number, end?: number): {
     const codes = Object.keys(all_stock_loacl).slice(start, end);
     const obj: {[code: string]: StockMeta} = {};
     codes.forEach(code => {
-        obj[code] = all_stock_loacl[code];
+        const item = all_stock_loacl[code];
+        if(filter && filter(item)) {
+            return;
+        }
+        obj[code] = item;
     });
     return obj;
 }

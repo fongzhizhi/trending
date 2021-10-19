@@ -58,12 +58,6 @@
     style="width: 100%">
     <el-table-column prop="code" label="Code" />
     <el-table-column prop="stock_name" label="Stock Name" />
-    <el-table-column
-      prop="stock_type"
-      label="Stock Type"
-      :filters="typeFilters"
-      :filter-method="typeFilterHandle"
-    />
     <el-table-column prop="min" label="Min" sortable />
     <el-table-column prop="max" label="Max" sortable />
     <el-table-column prop="ave" label="Ave" sortable />
@@ -78,6 +72,7 @@
     import { dateFormat } from '../utils/utils'
     import { getAll_StockObj, StockMeta, StockType, toUsualStockType } from '../datas/localData';
     import { useRouter } from 'vue-router';
+import { getPriceIndexOptions } from '../echarts/utils';
     /**表单模型 */
     interface FormModel {
         /**日期范围 */
@@ -97,247 +92,163 @@
     };
 
     export default {
-    components: {
-        EChart
-    },
-    setup() {
-        const router = useRouter();
-        const ref_form = ref();
-        const ref_ratio_pie = ref();
-        /**表单模型 */
-        const beforeDate = new Date();
-        const nowDate = new Date();
-        beforeDate.setFullYear(nowDate.getFullYear() - 5);
-        const stratIndex = 200;
-        const formModel: FormModel = reactive({
-            dateRange: [beforeDate, nowDate],
-            diffMin: -20,
-            diffMax: 10000,
-            stratIndex,
-            endIndex: stratIndex + 100,
-        });
-        /**表单规则 */
-        const formRules: FormRule<FormModel> = {
-            dateRange: [{
-                required: true,
-                message: 'Please Pick Date range!',
-                trigger: 'blur',
-            }]
-        };
-        let allStockObj: {
-            [code: string]: StockMeta;
-        } = {};
-
-        /**重置表单 */
-        const resetForm = () => {
-            ref_form.value.resetFields();
-        };
-        /**表单提交 */
-        const submitForm = async () => {
-            // 消息检测
-            const form = ref_form.value;
-            const valid: boolean = await form.validate();
-            if(!valid) {
-                ElMessage.error('Submit datas Error!');
-                return;
-            }
-            debugger
-            const timerName = 'query';
-            console.time(timerName);
-            // loading
-            const loading = ElLoading.service({
-                text: 'uploading in 0% ...',
+        components: {
+            EChart
+        },
+        setup() {
+            const router = useRouter();
+            const ref_form = ref();
+            const ref_ratio_pie = ref();
+            /**表单模型 */
+            const beforeDate = new Date();
+            const nowDate = new Date();
+            beforeDate.setFullYear(nowDate.getFullYear() - 5);
+            const stratIndex = 200;
+            const formModel: FormModel = reactive({
+                dateRange: [beforeDate, nowDate],
+                diffMin: -20,
+                diffMax: 10000,
+                stratIndex,
+                endIndex: stratIndex + 100,
             });
-            // 发起请求
-            const datas: FormModel = form.model;
-            const format = 'yyyy-MM-dd';
-            // 数据太多了，批次查询
-            allStockObj = getAll_StockObj(datas.stratIndex, datas.endIndex);
-            const allCodes = Object.keys(allStockObj);
-            const queryStep = 5;
-            const allRes: KDataRes = {};
-            const total = allCodes.length;
-            for(let i = 0; i < total; i+= queryStep) {
-                loading.setText(`uploading in ${(i / total * 100).toFixed(2)}% ...`);
-                const res = await get_k_data_json({
-                    codes: allCodes.slice(i, i + queryStep),
-                    start: dateFormat(format, datas.dateRange[0]),
-                    end: dateFormat(format, datas.dateRange[1]),
-                });
-                await nextTick();
-                Object.assign(allRes, res);
-            }
-            // 更新图例
-            updateView(allRes);
-            loading.setText(`uploading in 100% ...`)
-            loading.close();
-            console.timeEnd(timerName);
-        }
-
-        interface TableItem {
-            code: string;
-            stock_name: string;
-            stock_type: string;
-            min: number;
-            max: number;
-            ave: number;
-        };
-        /**表格数据 */
-        const tableData = reactive<TableItem[]>([]);
-        const typeFilters = reactive([
-            {text: toUsualStockType(StockType.INDEX), value: toUsualStockType(StockType.INDEX)},
-            {text: toUsualStockType(StockType.STOCK), value: toUsualStockType(StockType.STOCK)},
-            {text: toUsualStockType(StockType.OTHER), value: toUsualStockType(StockType.OTHER)},
-        ]);
-        const typeFilterHandle = (value: string, row: TableItem) => {
-            return row.stock_type === value;
-        };
-        const ratioFilters = (() => {
-        const arr: {text: string, value: any}[] = [];
-        const step = 20;
-        for(let start = 0; start < 100; start += step) {
-            const end = Math.min(start + step, 100);
-            arr.push({
-            text: `[${start}%, ${end}%]`,
-            value: `${start/100}, ${end/100}`,
-            });
-        };
-        return arr;
-        })();
-            const ratioFilterHandle = (value: string, row: TableItem) => {
-        };
-
-        function tableDBClick(row: TableItem) {
-        
-        const model: FormModel = ref_form.value.model;
-        const format = 'yyyy-MM-dd';
-        router.push({
-            name: 'one',
-            params: {
-            code: row.code,
-            refer_code: row.code.startsWith('sh.') ? 'sh.000001' : 'sz.399106',
-            start: dateFormat(format, model.dateRange[0]),
-            end: dateFormat(format, model.dateRange[1])
-            },
-        });
-        }
-
-        /**
-        * 更新图例
-        */
-        function updateView(res: KDataRes) {
-            const ratioMap: {[k: string]: {value: number, name: string}} = {};
-            // 表格详情
-            updateTableView(res, ratioMap);
-            // 区间范围统计图，均分为5份，统计每个区间的股票个数
-            updatePieView(Object.values(ratioMap));
-        }
-
-        function fixNum(n: number, p = 2) {
-            return +n.toFixed(p);
-        }
-
-        /**更新表格 */
-        function updateTableView(res: KDataRes, ratioMap: {[k: string]: {value: number, name: string}}) {
-        ratioFilters.forEach(item => {
-            ratioMap[item.value] = {
-            name: item.text,
-            value: 0,
-            };  
-        });
-        const stockTypeMap: {[k: string]: number} = {};
-        typeFilters.forEach(item => {
-            stockTypeMap[item.text] = 0;
-        });
-        for(let code in res) {
-            const item = res[code];
-            if(item.length == 0) {
-                continue;
-            }
-            let min = Infinity, max = 0, ave = 0;
-            item.forEach(i => {
-                const price = i.close;
-                min = Math.min(min, price);
-                max = Math.max(max, price);
-                ave += price;
-            });
-            ave /= item.length;
-            const last = item[item.length - 1];
-            const ratio = (max - min === 0) ? 0 : (last.close - min) / (max - min);
-            const stock = allStockObj[last.code];
-            const stock_type = toUsualStockType(stock.type);
-            const row = {
-                code: last.code,
-                stock_name: stock.code_name,
-                stock_type,
-                min: fixNum(min),
-                max: fixNum(max),
-                ave: fixNum(ave),
-                ratio: fixNum(ratio),
+            /**表单规则 */
+            const formRules: FormRule<FormModel> = {
+                dateRange: [{
+                    required: true,
+                    message: 'Please Pick Date range!',
+                    trigger: 'blur',
+                }]
             };
-            stockTypeMap[stock_type]++;
-            tableData.push(row);
-        }
+            let allStockObj: {
+                [code: string]: StockMeta;
+            } = {};
 
-        typeFilters.forEach(item => {
-            item.text = `${item.text}[${stockTypeMap[item.text]}]`
-        });
-        }
-
-        function updatePieView(data: any[]) {
-        ref_ratio_pie.value.updateOptions({
-            tooltip: {
-                trigger: 'item'
-            },
-            legend: {
-                top: '5%',
-                left: 'center'
-            },
-            series: [
-                {
-                name: 'Stock Ratio From',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 10,
-                    borderColor: '#fff',
-                    borderWidth: 2
-                },
-                label: {
-                    show: false,
-                    position: 'center'
-                },
-                emphasis: {
-                    label: {
-                    show: true,
-                    fontSize: '40',
-                    fontWeight: 'bold'
-                    }
-                },
-                labelLine: {
-                    show: false
-                },
-                data
+            /**重置表单 */
+            const resetForm = () => {
+                ref_form.value.resetFields();
+            };
+            /**表单提交 */
+            const submitForm = async () => {
+                // 消息检测
+                const form = ref_form.value;
+                const valid: boolean = await form.validate();
+                if(!valid) {
+                    ElMessage.error('Submit datas Error!');
+                    return;
                 }
-            ]
-            });
-        }
+                // loading
+                const loading = ElLoading.service({
+                    text: 'uploading in 0% ...',
+                });
+                // 发起请求
+                const model: FormModel = form.model;
+                const format = 'yyyy-MM-dd';
+                // 数据太多了，批次查询
+                allStockObj = getAll_StockObj(model.stratIndex, model.endIndex, (stock) => {
+                    return stock.type != StockType.STOCK;
+                });
+                const allCodes = Object.keys(allStockObj);
+                const queryStep = 5;
+                const allRes: KDataRes = {};
+                const total = allCodes.length;
+                for(let i = 0; i < total; i+= queryStep) {
+                    loading.setText(`uploading in ${(i / total * 100).toFixed(2)}% ...`);
+                    const res = await get_k_data_json({
+                        codes: allCodes.slice(i, i + queryStep),
+                        start: dateFormat(format, model.dateRange[0]),
+                        end: dateFormat(format, model.dateRange[1]),
+                        frequency: Frequency.Day,
+                    });
+                    await nextTick();
+                    Object.assign(allRes, res);
+                }
+                // 更新图例
+                updateView(allRes);
+                loading.setText(`uploading in 100% ...`)
+                loading.close();
+            }
 
-        return {
-        formModel,
-        formRules,
-        ref_form,
-        ref_ratio_pie,
-        tableData,
-        tableDBClick,
-        typeFilters,
-        typeFilterHandle,
-        ratioFilters,
-        ratioFilterHandle,
-        resetForm,
-        submitForm,
-        } 
-    }
+            interface TableItem {
+                code: string;
+                stock_name: string;
+                stock_type: string;
+                min: number;
+                max: number;
+                ave: number;
+            };
+            /**表格数据 */
+            const tableData = reactive<TableItem[]>([]);
+
+            function tableDBClick(row: TableItem) {
+                const model: FormModel = ref_form.value.model;
+                const format = 'yyyy-MM-dd';
+                router.push({
+                    name: 'one',
+                    params: {
+                    code: row.code,
+                    refer_code: row.code.startsWith('sh.') ? 'sh.000001' : 'sz.399106',
+                    start: dateFormat(format, model.dateRange[0]),
+                    end: dateFormat(format, model.dateRange[1])
+                    },
+                });
+            }
+
+            /**
+            * 更新图例
+            */
+            function updateView(res: KDataRes) {
+                // 表格详情
+                updateTableView(res);
+            }
+
+            function fixNum(n: number, p = 2) {
+                return +n.toFixed(p);
+            }
+
+            /**更新表格 */
+            function updateTableView(res: KDataRes) {
+                const stockTypeMap: {[k: string]: number} = {};
+                for(let code in res) {
+                    const item = res[code];
+                    if(item.length == 0) {
+                        continue;
+                    }
+
+                    let min = Infinity, max = -Infinity, ave = 0;
+                    const priceDiff = getPriceIndexOptions(item, (c) => {
+                        const diff_price = c.close - refer_close;
+                        min = Math.min(min, diff_price);
+                        max = Math.max(max, diff_price);
+                        ave += diff_price;
+                    }).data;
+                    ave /= priceDiff.length;
+
+                    const last = item[item.length - 1];
+                    const stock = allStockObj[last.code];
+                    const stock_type = toUsualStockType(stock.type);
+                    const row: TableItem = {
+                        code: last.code,
+                        stock_name: stock.code_name,
+                        stock_type,
+                        min: fixNum(min),
+                        max: fixNum(max),
+                        ave: fixNum(ave),
+                    };
+                    stockTypeMap[stock_type]++;
+                    tableData.push(row);
+                }
+            }
+
+            return {
+                formModel,
+                formRules,
+                ref_form,
+                ref_ratio_pie,
+                tableData,
+                tableDBClick,
+                resetForm,
+                submitForm,
+            } 
+        }
     }
 </script>

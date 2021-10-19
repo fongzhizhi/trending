@@ -22,12 +22,13 @@ export function getCandleStickOption2(candles: CandlestickChart[]) {
 }
 
 /**获取价格指数数据 */
-export function getPriceIndexOptions(configs: CandlestickChartConfig[]) {
+export function getPriceIndexOptions(configs: CandlestickChartConfig[], fn?: (c: CandlestickChartConfig) => void) {
     const dates: string[] = []; // 日期
     const prices: number[] = []; // 价格指数
     configs.forEach(config => {
         dates.push(config.date);
         prices.push(config.close);
+        fn && fn.call(null, config);
     });
     return {
         /**日期列表 */

@@ -160,8 +160,6 @@ export default {
         ElMessage.error('Submit datas Error!');
         return;
       }
-      const timerName = 'query';
-      console.time(timerName);
       // loading
       const loading = ElLoading.service({
         text: 'uploading in 0% ...',
@@ -190,7 +188,6 @@ export default {
       updateView(allRes);
       loading.setText(`uploading in 100% ...`)
       loading.close();
-      console.timeEnd(timerName);
     }
 
     interface TableItem {
